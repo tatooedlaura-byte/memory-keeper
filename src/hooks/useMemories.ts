@@ -35,14 +35,15 @@ export function useMemories(userId: string | undefined) {
 
     const q = query(
       collection(db, 'memories'),
-      where('userId', '==', userId),
-      orderBy('createdAt', 'desc')
+      where('userId', '==', userId)
     );
+
+    console.log('Setting up Firestore listener for user:', userId);
 
     const unsubscribe = onSnapshot(
       q,
       (snapshot) => {
-        const memoriesData: Memory[] = [];
+        let memoriesData: Memory[] = [];
         snapshot.forEach((doc) => {
           const data = doc.data();
           memoriesData.push({
@@ -55,6 +56,8 @@ export function useMemories(userId: string | undefined) {
             userId: data.userId
           });
         });
+        // Sort by createdAt descending (newest first)
+        memoriesData.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
         setMemories(memoriesData);
         setLoading(false);
       },

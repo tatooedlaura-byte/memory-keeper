@@ -12,6 +12,7 @@ export function NewMemoryForm({ onSubmit }: NewMemoryFormProps) {
   const [tags, setTags] = useState('');
   const [files, setFiles] = useState<File[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [previews, setPreviews] = useState<{ file: File; url: string }[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -46,17 +47,21 @@ export function NewMemoryForm({ onSubmit }: NewMemoryFormProps) {
     if (!text.trim()) return;
 
     setIsSubmitting(true);
+    setError(null);
+    console.log('Starting save...');
     try {
       const tagList = tags
         .split(',')
         .map(t => t.trim())
         .filter(t => t.length > 0);
 
+      console.log('Calling onSubmit...');
       await onSubmit({
         text: text.trim(),
         tags: tagList,
         mediaFiles: files
       });
+      console.log('Save successful!');
 
       // Reset form
       setText('');
@@ -65,9 +70,13 @@ export function NewMemoryForm({ onSubmit }: NewMemoryFormProps) {
       previews.forEach(p => URL.revokeObjectURL(p.url));
       setPreviews([]);
       setIsOpen(false);
-    } catch (error) {
-      console.error('Failed to save memory:', error);
+    } catch (err) {
+      console.error('Failed to save memory:', err);
+      const message = err instanceof Error ? err.message : 'Unknown error';
+      setError(`Failed to save: ${message}`);
+      alert(`Error: ${message}`);
     } finally {
+      console.log('Save finished');
       setIsSubmitting(false);
     }
   };
@@ -109,6 +118,8 @@ export function NewMemoryForm({ onSubmit }: NewMemoryFormProps) {
           autoFocus
         />
 
+        {/* Media upload temporarily disabled - Firebase Storage setup pending */}
+        {false && (
         <div className="media-upload-section">
           <input
             type="file"
@@ -152,6 +163,7 @@ export function NewMemoryForm({ onSubmit }: NewMemoryFormProps) {
             </div>
           )}
         </div>
+        )}
 
         <input
           type="text"
