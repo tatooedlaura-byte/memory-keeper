@@ -12,7 +12,7 @@ export function NewMemoryForm({ onSubmit }: NewMemoryFormProps) {
   const [tags, setTags] = useState('');
   const [files, setFiles] = useState<File[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [_error, setError] = useState<string | null>(null);
   const [previews, setPreviews] = useState<{ file: File; url: string }[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
 

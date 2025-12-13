@@ -7,9 +7,10 @@ import {
   doc,
   query,
   where,
-  orderBy,
   onSnapshot,
-  Timestamp
+  Timestamp,
+  type UpdateData,
+  type DocumentData
 } from 'firebase/firestore';
 import {
   ref,
@@ -130,7 +131,7 @@ export function useMemories(userId: string | undefined) {
 
     try {
       const memoryRef = doc(db, 'memories', memoryId);
-      const updateData: Record<string, unknown> = {
+      const updateData: UpdateData<DocumentData> = {
         ...updates,
         updatedAt: Timestamp.now()
       };
