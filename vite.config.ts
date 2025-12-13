@@ -18,8 +18,8 @@ export default defineConfig({
         background_color: '#f8f9ff',
         display: 'standalone',
         orientation: 'portrait',
-        scope: '/',
-        start_url: '/',
+        scope: '/memory-keeper/',
+        start_url: '/memory-keeper/',
         icons: [
           {
             src: 'pwa-192x192.png',
