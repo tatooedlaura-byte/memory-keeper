@@ -118,8 +118,6 @@ export function NewMemoryForm({ onSubmit }: NewMemoryFormProps) {
           autoFocus
         />
 
-        {/* Media upload temporarily disabled - Firebase Storage setup pending */}
-        {false && (
         <div className="media-upload-section">
           <input
             type="file"
@@ -163,7 +161,6 @@ export function NewMemoryForm({ onSubmit }: NewMemoryFormProps) {
             </div>
           )}
         </div>
-        )}
 
         <input
           type="text"
