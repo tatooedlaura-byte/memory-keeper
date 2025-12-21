@@ -1,10 +1,9 @@
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { CloudKitProvider } from '../services/storage/CloudKitProvider';
-import { GoogleDriveProvider } from '../services/storage/GoogleDriveProvider';
 import type { StorageProvider } from '../services/storage/StorageProvider';
 import type { Memory, MemoryInput } from '../types/Memory';
 
-export function useMemories(userId: string | undefined, providerType?: 'apple' | 'google') {
+export function useMemories(userId: string | undefined) {
   const [memories, setMemories] = useState<Memory[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -13,15 +12,10 @@ export function useMemories(userId: string | undefined, providerType?: 'apple' |
   // Get or create the storage provider
   const getProvider = useCallback((): StorageProvider => {
     if (!providerRef.current) {
-      // Determine provider based on type or default to CloudKit on iOS
-      if (providerType === 'google') {
-        providerRef.current = new GoogleDriveProvider();
-      } else {
-        providerRef.current = new CloudKitProvider();
-      }
+      providerRef.current = new CloudKitProvider();
     }
     return providerRef.current;
-  }, [providerType]);
+  }, []);
 
   useEffect(() => {
     if (!userId) {
@@ -30,6 +24,9 @@ export function useMemories(userId: string | undefined, providerType?: 'apple' |
       return;
     }
 
+    setMemories([]);
+    setLoading(true);
+
     let unsubscribe: (() => void) | null = null;
 
     const initializeAndLoad = async () => {
@@ -37,7 +34,6 @@ export function useMemories(userId: string | undefined, providerType?: 'apple' |
         const provider = getProvider();
         await provider.initialize(userId);
 
-        // Load initial memories
         const initialMemories = await provider.getMemories();
         const processed = initialMemories.map((m) => ({
           ...m,
@@ -48,7 +44,6 @@ export function useMemories(userId: string | undefined, providerType?: 'apple' |
         setMemories(processed);
         setLoading(false);
 
-        // Subscribe to changes if supported
         unsubscribe = provider.subscribeToChanges?.((updatedMemories) => {
           const processed = updatedMemories.map((m) => ({
             ...m,

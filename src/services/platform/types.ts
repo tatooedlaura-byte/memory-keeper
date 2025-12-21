@@ -4,7 +4,7 @@ import type { Memory, MediaAttachment, MemoryInput } from '../../types/Memory';
 export type { Memory, MediaAttachment, MemoryInput };
 
 // Auth provider types
-export type AuthProviderType = 'apple' | 'google' | 'firebase';
+export type AuthProviderType = 'apple';
 
 // User identity abstraction (works across all auth providers)
 export interface AuthUser {
@@ -16,7 +16,7 @@ export interface AuthUser {
 }
 
 // Storage provider types
-export type StorageProviderType = 'cloudkit' | 'googledrive' | 'firebase';
+export type StorageProviderType = 'cloudkit';
 
 // Sync status for a memory
 export type SyncStatus = 'synced' | 'pending' | 'conflict' | 'error';
@@ -58,11 +58,3 @@ export interface SyncResult {
   errors: string[];
 }
 
-// Migration status
-export interface MigrationProgress {
-  status: 'idle' | 'connecting' | 'fetching' | 'uploading' | 'complete' | 'error';
-  totalItems: number;
-  completedItems: number;
-  currentItem?: string;
-  error?: string;
-}

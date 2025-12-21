@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback, useMemo, useRef } from 'react';
+import { useState, useEffect, useCallback, useMemo } from 'react';
 import { usePlatform } from './usePlatform';
-import { createAuthProvider, type AuthProvider, GoogleAuthProvider } from '../services/auth';
+import { createAuthProvider, type AuthProvider } from '../services/auth';
 import type { AuthUser, AuthProviderType } from '../services/platform/types';
 
 interface UseAuthOptions {
@@ -22,7 +22,6 @@ interface UseAuthReturn {
 
   // Auth methods
   signIn: () => Promise<void>;
-  signInWithGoogle: () => Promise<void>;
   signInWithEmail?: (email: string, password: string) => Promise<void>;
   createAccount?: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
@@ -44,9 +43,9 @@ export function useAuth(options?: UseAuthOptions): UseAuthReturn {
     if (options?.providerType) {
       return options.providerType;
     }
-    // Use platform-recommended provider
-    return platform.isApplePlatform ? 'apple' : 'google';
-  }, [options?.providerType, platform.isApplePlatform]);
+    // Use Apple provider
+    return 'apple';
+  }, [options?.providerType]);
 
   // Create the auth provider
   const provider = useMemo(() => {
@@ -65,16 +64,7 @@ export function useAuth(options?: UseAuthOptions): UseAuthReturn {
     return () => unsubscribe();
   }, [provider]);
 
-  // Google auth provider for cross-platform Google sign-in
-  const googleProviderRef = useRef<GoogleAuthProvider | null>(null);
-  const getGoogleProvider = useCallback(() => {
-    if (!googleProviderRef.current) {
-      googleProviderRef.current = new GoogleAuthProvider();
-    }
-    return googleProviderRef.current;
-  }, []);
-
-  // Sign in using the provider's OAuth flow (Apple/Google)
+  // Sign in using the provider's OAuth flow (Apple)
   const signIn = useCallback(async () => {
     setError(null);
     try {
@@ -85,20 +75,6 @@ export function useAuth(options?: UseAuthOptions): UseAuthReturn {
       throw err;
     }
   }, [provider]);
-
-  // Sign in with Google (available on all platforms)
-  const signInWithGoogle = useCallback(async () => {
-    setError(null);
-    try {
-      const googleProvider = getGoogleProvider();
-      const user = await googleProvider.signIn();
-      setUser(user);
-    } catch (err: unknown) {
-      const message = err instanceof Error ? err.message : 'Google sign in failed';
-      setError(message);
-      throw err;
-    }
-  }, [getGoogleProvider]);
 
   // Sign in with email/password (only for Firebase provider)
   const signInWithEmail = useCallback(
@@ -141,6 +117,7 @@ export function useAuth(options?: UseAuthOptions): UseAuthReturn {
     setError(null);
     try {
       await provider.signOut();
+      setUser(null);
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Sign out failed';
       setError(message);
@@ -163,7 +140,6 @@ export function useAuth(options?: UseAuthOptions): UseAuthReturn {
     isApplePlatform: platform.isApplePlatform,
 
     signIn,
-    signInWithGoogle,
     signInWithEmail: provider.supportsEmailPassword ? signInWithEmail : undefined,
     createAccount: provider.supportsEmailPassword ? createAccount : undefined,
     signOut,

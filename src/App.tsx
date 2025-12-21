@@ -15,15 +15,10 @@ function App() {
     loading: authLoading,
     error: authError,
     signIn,
-    signInWithGoogle,
     signInWithEmail,
     createAccount,
     signOut,
-    isApplePlatform,
   } = useAuth();
-
-  // Determine storage provider based on user's auth provider
-  const storageProvider = user?.provider === 'google' ? 'google' : 'apple';
 
   const {
     memories,
@@ -33,7 +28,7 @@ function App() {
     deleteMemory,
     removeMedia,
     searchMemories,
-  } = useMemories(user?.id, storageProvider);
+  } = useMemories(user?.id);
 
   const [filteredMemories, setFilteredMemories] = useState<Memory[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -66,11 +61,9 @@ function App() {
     return (
       <AuthForm
         onSignIn={signIn}
-        onSignInWithGoogle={signInWithGoogle}
         onSignInWithEmail={signInWithEmail}
         onRegister={createAccount}
         error={authError}
-        isApplePlatform={isApplePlatform}
       />
     );
   }

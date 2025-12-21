@@ -2,6 +2,8 @@ import Foundation
 import Capacitor
 import CloudKit
 import AuthenticationServices
+import CommonCrypto
+import GoogleSignIn
 
 @objc(CloudKitPlugin)
 public class CloudKitPlugin: CAPPlugin, CAPBridgedPlugin {
@@ -34,6 +36,30 @@ public class CloudKitPlugin: CAPPlugin, CAPBridgedPlugin {
     private var webAuthSession: ASWebAuthenticationSession?
     private let googleClientId = "365508176942-9ktfp75ojfisdip3kdj7tb2gj5u2q2vb.apps.googleusercontent.com"
     private let googleScopes = "https://www.googleapis.com/auth/drive.appdata https://www.googleapis.com/auth/userinfo.email https://www.googleapis.com/auth/userinfo.profile"
+
+    // PKCE helpers
+    private var codeVerifier: String?
+
+    private func generateCodeVerifier() -> String {
+        var buffer = [UInt8](repeating: 0, count: 32)
+        _ = SecRandomCopyBytes(kSecRandomDefault, buffer.count, &buffer)
+        return Data(buffer).base64EncodedString()
+            .replacingOccurrences(of: "+", with: "-")
+            .replacingOccurrences(of: "/", with: "_")
+            .replacingOccurrences(of: "=", with: "")
+    }
+
+    private func generateCodeChallenge(from verifier: String) -> String {
+        guard let data = verifier.data(using: .utf8) else { return "" }
+        var hash = [UInt8](repeating: 0, count: Int(CC_SHA256_DIGEST_LENGTH))
+        data.withUnsafeBytes {
+            _ = CC_SHA256($0.baseAddress, CC_LONG(data.count), &hash)
+        }
+        return Data(hash).base64EncodedString()
+            .replacingOccurrences(of: "+", with: "-")
+            .replacingOccurrences(of: "/", with: "_")
+            .replacingOccurrences(of: "=", with: "")
+    }
 
     // MARK: - Initialize
 
@@ -86,73 +112,77 @@ public class CloudKitPlugin: CAPPlugin, CAPBridgedPlugin {
     // MARK: - Sign in with Google
 
     @objc func signInWithGoogle(_ call: CAPPluginCall) {
-        // Get client ID from call or use configured one
-        let clientId = call.getString("clientId") ?? googleClientId
+        // Always use the iOS client ID (ignore web client ID from JavaScript)
+        let clientId = googleClientId
 
         if clientId == "YOUR_GOOGLE_IOS_CLIENT_ID" || clientId.isEmpty {
             call.reject("Google Client ID not configured")
             return
         }
 
-        // Build the OAuth URL - use reversed client ID as scheme
-        let clientIdPrefix = clientId.components(separatedBy: ".").first ?? ""
-        let redirectScheme = "com.googleusercontent.apps.\(clientIdPrefix)"
-        let redirectUri = "\(redirectScheme):/oauthredirect"
+        // Configure Google Sign-In
+        let config = GIDConfiguration(clientID: clientId)
+        GIDSignIn.sharedInstance.configuration = config
 
-        var components = URLComponents(string: "https://accounts.google.com/o/oauth2/v2/auth")!
-        components.queryItems = [
-            URLQueryItem(name: "client_id", value: clientId),
-            URLQueryItem(name: "redirect_uri", value: redirectUri),
-            URLQueryItem(name: "response_type", value: "token"),
-            URLQueryItem(name: "scope", value: googleScopes),
-            URLQueryItem(name: "include_granted_scopes", value: "true"),
-        ]
-
-        guard let authURL = components.url else {
-            call.reject("Failed to build auth URL")
+        // Get the presenting view controller
+        guard let presentingVC = self.bridge?.viewController else {
+            call.reject("No presenting view controller")
             return
         }
 
-        // Use ASWebAuthenticationSession for secure OAuth
-        webAuthSession = ASWebAuthenticationSession(
-            url: authURL,
-            callbackURLScheme: redirectScheme
-        ) { [weak self] callbackURL, error in
-            if let error = error {
-                if (error as NSError).code == ASWebAuthenticationSessionError.canceledLogin.rawValue {
-                    call.reject("Sign in cancelled")
-                } else {
-                    call.reject("Sign in failed: \(error.localizedDescription)")
+        // Request additional scopes for Google Drive
+        let additionalScopes = ["https://www.googleapis.com/auth/drive.appdata"]
+
+        GIDSignIn.sharedInstance.signIn(withPresenting: presentingVC, hint: nil, additionalScopes: additionalScopes) { [weak self] result, error in
+            DispatchQueue.main.async {
+                if let error = error {
+                    call.reject("Google sign in failed: \(error.localizedDescription)")
+                    return
                 }
-                return
-            }
 
-            guard let callbackURL = callbackURL,
-                  let fragment = callbackURL.fragment else {
-                call.reject("No callback URL received")
-                return
-            }
-
-            // Parse the access token from the fragment
-            let params = fragment.components(separatedBy: "&").reduce(into: [String: String]()) { result, param in
-                let parts = param.components(separatedBy: "=")
-                if parts.count == 2 {
-                    result[parts[0]] = parts[1].removingPercentEncoding
+                guard let result = result else {
+                    call.reject("No sign in result")
+                    return
                 }
-            }
 
-            guard let accessToken = params["access_token"] else {
-                call.reject("No access token in response")
-                return
-            }
+                let user = result.user
+                let userId = user.userID ?? ""
+                let email = user.profile?.email
+                let name = user.profile?.name
+                let picture = user.profile?.imageURL(withDimension: 200)?.absoluteString
 
-            // Fetch user info with the access token
-            self?.fetchGoogleUserInfo(accessToken: accessToken, call: call)
+                // Get access token
+                guard let accessToken = user.accessToken.tokenString as String? else {
+                    call.reject("No access token")
+                    return
+                }
+
+                // Store credentials
+                let userDefaults = UserDefaults.standard
+                userDefaults.set(userId, forKey: "googleUserId")
+                userDefaults.set(accessToken, forKey: "googleAccessToken")
+                if let email = email {
+                    userDefaults.set(email, forKey: "googleUserEmail")
+                }
+                if let name = name {
+                    userDefaults.set(name, forKey: "googleUserName")
+                }
+                if let picture = picture {
+                    userDefaults.set(picture, forKey: "googleUserPicture")
+                }
+
+                call.resolve([
+                    "user": [
+                        "id": userId,
+                        "email": email as Any,
+                        "displayName": name as Any,
+                        "photoURL": picture as Any,
+                        "provider": "google"
+                    ],
+                    "accessToken": accessToken
+                ])
+            }
         }
-
-        webAuthSession?.presentationContextProvider = self
-        webAuthSession?.prefersEphemeralWebBrowserSession = false
-        webAuthSession?.start()
     }
 
     private func fetchGoogleUserInfo(accessToken: String, call: CAPPluginCall) {
@@ -295,7 +325,10 @@ public class CloudKitPlugin: CAPPlugin, CAPBridgedPlugin {
         let record = CKRecord(recordType: recordType, recordID: recordID)
 
         record["text"] = text as CKRecordValue
-        record["tags"] = tags as CKRecordValue
+        // Only set tags if not empty (CloudKit can't initialize a field with empty array)
+        if !tags.isEmpty {
+            record["tags"] = tags as CKRecordValue
+        }
         record["media"] = mediaJson as CKRecordValue
         record["createdAt"] = Date() as CKRecordValue
         record["updatedAt"] = Date() as CKRecordValue
@@ -347,7 +380,7 @@ public class CloudKitPlugin: CAPPlugin, CAPBridgedPlugin {
             if let text = call.getString("text") {
                 record["text"] = text as CKRecordValue
             }
-            if let tags = call.getArray("tags", String.self) {
+            if let tags = call.getArray("tags", String.self), !tags.isEmpty {
                 record["tags"] = tags as CKRecordValue
             }
             if let mediaJson = call.getString("media") {

@@ -3,20 +3,16 @@ import './AuthForm.css';
 
 interface AuthFormProps {
   onSignIn: () => Promise<void>;
-  onSignInWithGoogle?: () => Promise<void>;
   onSignInWithEmail?: (email: string, password: string) => Promise<void>;
   onRegister?: (email: string, password: string) => Promise<void>;
   error: string | null;
-  isApplePlatform: boolean;
 }
 
 export function AuthForm({
   onSignIn,
-  onSignInWithGoogle,
   onSignInWithEmail,
   onRegister,
   error,
-  isApplePlatform,
 }: AuthFormProps) {
   const [showEmailForm, setShowEmailForm] = useState(false);
   const [isLogin, setIsLogin] = useState(true);
@@ -31,19 +27,6 @@ export function AuthForm({
     setIsSubmitting(true);
     try {
       await onSignIn();
-    } catch {
-      // Error handled by parent
-    } finally {
-      setIsSubmitting(false);
-    }
-  };
-
-  const handleGoogleSignIn = async () => {
-    if (!onSignInWithGoogle) return;
-    setLocalError(null);
-    setIsSubmitting(true);
-    try {
-      await onSignInWithGoogle();
     } catch {
       // Error handled by parent
     } finally {
@@ -94,33 +77,17 @@ export function AuthForm({
 
         {!showEmailForm ? (
           <div className="auth-oauth">
-            {isApplePlatform && (
-              <button
-                className="oauth-button apple"
-                onClick={handleOAuthSignIn}
-                disabled={isSubmitting}
-              >
-                <span className="oauth-icon">Apple</span>
-                <span>Sign in with Apple</span>
-              </button>
-            )}
-
-            {onSignInWithGoogle && (
-              <button
-                className="oauth-button google"
-                onClick={handleGoogleSignIn}
-                disabled={isSubmitting}
-                style={isApplePlatform ? { marginTop: '0.5rem' } : undefined}
-              >
-                <span className="oauth-icon">G</span>
-                <span>Sign in with Google</span>
-              </button>
-            )}
+            <button
+              className="oauth-button apple"
+              onClick={handleOAuthSignIn}
+              disabled={isSubmitting}
+            >
+              <span className="oauth-icon">Apple</span>
+              <span>Sign in with Apple</span>
+            </button>
 
             <p className="auth-storage-note">
-              {isApplePlatform
-                ? 'Apple saves to iCloud, Google saves to Google Drive'
-                : 'Your memories will be stored in your personal Google Drive'}
+              Your memories will be stored securely in iCloud
             </p>
 
             {(onSignInWithEmail || onRegister) && (
@@ -218,7 +185,7 @@ export function AuthForm({
                 className="back-button"
                 onClick={() => setShowEmailForm(false)}
               >
-                Back to {isApplePlatform ? 'Apple' : 'Google'} Sign In
+                Back to Apple Sign In
               </button>
             </form>
           </>
