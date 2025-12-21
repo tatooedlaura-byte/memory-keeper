@@ -10,7 +10,21 @@ import type { Memory } from './types/Memory';
 import './App.css';
 
 function App() {
-  const { user, loading: authLoading, error: authError, login, register, logout } = useAuth();
+  const {
+    user,
+    loading: authLoading,
+    error: authError,
+    signIn,
+    signInWithGoogle,
+    signInWithEmail,
+    createAccount,
+    signOut,
+    isApplePlatform,
+  } = useAuth();
+
+  // Determine storage provider based on user's auth provider
+  const storageProvider = user?.provider === 'google' ? 'google' : 'apple';
+
   const {
     memories,
     loading: memoriesLoading,
@@ -18,21 +32,24 @@ function App() {
     updateMemory,
     deleteMemory,
     removeMedia,
-    searchMemories
-  } = useMemories(user?.uid);
+    searchMemories,
+  } = useMemories(user?.id, storageProvider);
 
   const [filteredMemories, setFilteredMemories] = useState<Memory[]>([]);
   const [isSearching, setIsSearching] = useState(false);
 
-  const handleSearch = useCallback((term: string) => {
-    if (term.trim()) {
-      setFilteredMemories(searchMemories(term));
-      setIsSearching(true);
-    } else {
-      setFilteredMemories([]);
-      setIsSearching(false);
-    }
-  }, [searchMemories]);
+  const handleSearch = useCallback(
+    (term: string) => {
+      if (term.trim()) {
+        setFilteredMemories(searchMemories(term));
+        setIsSearching(true);
+      } else {
+        setFilteredMemories([]);
+        setIsSearching(false);
+      }
+    },
+    [searchMemories]
+  );
 
   const displayMemories = isSearching ? filteredMemories : memories;
 
@@ -46,13 +63,22 @@ function App() {
   }
 
   if (!user) {
-    return <AuthForm onLogin={login} onRegister={register} error={authError} />;
+    return (
+      <AuthForm
+        onSignIn={signIn}
+        onSignInWithGoogle={signInWithGoogle}
+        onSignInWithEmail={signInWithEmail}
+        onRegister={createAccount}
+        error={authError}
+        isApplePlatform={isApplePlatform}
+      />
+    );
   }
 
   return (
     <div className="app">
       <div className="app-container">
-        <Header onLogout={logout} userEmail={user.email || undefined} />
+        <Header onLogout={signOut} userEmail={user.email} />
 
         <SearchBar
           onSearch={handleSearch}

@@ -7,6 +7,7 @@
   max-width: 700px;
   margin: 0 auto;
   padding: 1rem 1.5rem 6rem;
+  padding-top: calc(1rem + env(safe-area-inset-top));
 }
 
 /* Loading screen */
@@ -106,5 +107,6 @@ body {
 @media (max-width: 480px) {
   .app-container {
     padding: 0.75rem 1rem 5rem;
+    padding-top: calc(0.75rem + env(safe-area-inset-top));
   }
 }

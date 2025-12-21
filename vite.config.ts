@@ -4,7 +4,8 @@ import { VitePWA } from 'vite-plugin-pwa'
 
 // https://vite.dev/config/
 export default defineConfig({
-  base: '/memory-keeper/',
+  // Use relative paths for native app, absolute for web
+  base: process.env.CAPACITOR_BUILD ? './' : '/memory-keeper/',
   plugins: [
     react(),
     VitePWA({

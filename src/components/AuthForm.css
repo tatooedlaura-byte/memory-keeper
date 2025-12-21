@@ -128,3 +128,111 @@
   opacity: 0.7;
   cursor: not-allowed;
 }
+
+/* OAuth Buttons */
+.auth-oauth {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.oauth-button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.75rem;
+  padding: 1rem;
+  border: none;
+  border-radius: 12px;
+  font-size: 1rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  width: 100%;
+}
+
+.oauth-button.apple {
+  background: #000;
+  color: white;
+}
+
+.oauth-button.apple:hover:not(:disabled) {
+  background: #333;
+}
+
+.oauth-button.google {
+  background: white;
+  color: #333;
+  border: 2px solid #eee;
+}
+
+.oauth-button.google:hover:not(:disabled) {
+  background: #f8f8f8;
+  border-color: #ddd;
+}
+
+.oauth-button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+}
+
+.oauth-icon {
+  font-weight: bold;
+  font-size: 1.1rem;
+}
+
+.auth-storage-note {
+  text-align: center;
+  font-size: 0.8rem;
+  color: #888;
+  margin: 0.5rem 0;
+}
+
+.auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin: 0.5rem 0;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: #eee;
+}
+
+.auth-divider span {
+  color: #aaa;
+  font-size: 0.8rem;
+}
+
+.email-toggle {
+  background: transparent;
+  border: 1px solid #ddd;
+  padding: 0.875rem;
+  border-radius: 10px;
+  color: #666;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.email-toggle:hover {
+  background: #f5f5f5;
+}
+
+.back-button {
+  background: transparent;
+  border: none;
+  color: #888;
+  font-size: 0.85rem;
+  cursor: pointer;
+  padding: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.back-button:hover {
+  color: #667eea;
+}
