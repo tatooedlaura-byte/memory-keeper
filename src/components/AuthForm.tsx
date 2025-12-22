@@ -7,6 +7,7 @@ interface AuthFormProps {
   onSignInWithEmail?: (email: string, password: string) => Promise<void>;
   onRegister?: (email: string, password: string) => Promise<void>;
   error: string | null;
+  onBack?: () => void;
 }
 
 export function AuthForm({
@@ -15,6 +16,7 @@ export function AuthForm({
   onSignInWithEmail,
   onRegister,
   error,
+  onBack,
 }: AuthFormProps) {
   const [showEmailForm, setShowEmailForm] = useState(false);
   const [isLogin, setIsLogin] = useState(true);
@@ -129,6 +131,12 @@ export function AuthForm({
 
             {(localError || error) && (
               <div className="error-message">{localError || error}</div>
+            )}
+
+            {onBack && (
+              <button type="button" className="back-button" onClick={onBack}>
+                Back
+              </button>
             )}
           </div>
         ) : (

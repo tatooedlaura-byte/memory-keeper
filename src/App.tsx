@@ -1,6 +1,7 @@
 import { useState, useCallback } from 'react';
 import { useAuth } from './hooks/useAuth';
 import { useMemories } from './hooks/useMemories';
+import { LandingPage } from './components/LandingPage';
 import { AuthForm } from './components/AuthForm';
 import { Header } from './components/Header';
 import { SearchBar } from './components/SearchBar';
@@ -32,6 +33,7 @@ function App() {
 
   const [filteredMemories, setFilteredMemories] = useState<Memory[]>([]);
   const [isSearching, setIsSearching] = useState(false);
+  const [showLanding, setShowLanding] = useState(true);
 
   const handleSearch = useCallback(
     (term: string) => {
@@ -58,11 +60,16 @@ function App() {
   }
 
   if (!user) {
+    if (showLanding) {
+      return <LandingPage onGetStarted={() => setShowLanding(false)} />;
+    }
+
     return (
       <AuthForm
         onSignInWithApple={signInWithApple}
         onSignInWithGoogle={signInWithGoogle}
         error={authError}
+        onBack={() => setShowLanding(true)}
       />
     );
   }
