@@ -313,6 +313,7 @@ public class CloudKitPlugin: CAPPlugin, CAPBridgedPlugin {
     // MARK: - Save Memory
 
     @objc func saveMemory(_ call: CAPPluginCall) {
+        print("[CloudKit] saveMemory called")
         guard let text = call.getString("text") else {
             call.reject("Missing required field: text")
             return
@@ -320,6 +321,8 @@ public class CloudKitPlugin: CAPPlugin, CAPBridgedPlugin {
 
         let tags = call.getArray("tags", String.self) ?? []
         let mediaJson = call.getString("media") ?? "[]"
+
+        print("[CloudKit] Saving memory with text: \(text.prefix(50))...")
 
         let recordID = CKRecord.ID(recordName: UUID().uuidString, zoneID: zoneID)
         let record = CKRecord(recordType: recordType, recordID: recordID)
@@ -336,15 +339,18 @@ public class CloudKitPlugin: CAPPlugin, CAPBridgedPlugin {
         privateDatabase.save(record) { savedRecord, error in
             DispatchQueue.main.async {
                 if let error = error {
+                    print("[CloudKit] Save failed: \(error.localizedDescription)")
                     call.reject("Failed to save memory: \(error.localizedDescription)")
                     return
                 }
 
                 guard let savedRecord = savedRecord else {
+                    print("[CloudKit] No record returned after save")
                     call.reject("No record returned after save")
                     return
                 }
 
+                print("[CloudKit] Memory saved successfully: \(savedRecord.recordID.recordName)")
                 call.resolve(self.recordToDict(savedRecord))
             }
         }
@@ -431,30 +437,38 @@ public class CloudKitPlugin: CAPPlugin, CAPBridgedPlugin {
     // MARK: - Fetch Memories
 
     @objc func fetchMemories(_ call: CAPPluginCall) {
-        let query = CKQuery(recordType: recordType, predicate: NSPredicate(value: true))
-        query.sortDescriptors = [NSSortDescriptor(key: "createdAt", ascending: false)]
-
-        let operation = CKQueryOperation(query: query)
-        operation.zoneID = zoneID
-
+        // Use record zone changes to fetch all records (avoids query index requirements)
         var memories: [[String: Any]] = []
 
-        operation.recordMatchedBlock = { recordID, result in
+        let config = CKFetchRecordZoneChangesOperation.ZoneConfiguration()
+        config.previousServerChangeToken = nil // Fetch all records
+
+        let operation = CKFetchRecordZoneChangesOperation(recordZoneIDs: [zoneID], configurationsByRecordZoneID: [zoneID: config])
+
+        operation.recordWasChangedBlock = { recordID, result in
             switch result {
             case .success(let record):
-                memories.append(self.recordToDict(record))
+                if record.recordType == self.recordType {
+                    memories.append(self.recordToDict(record))
+                }
             case .failure(let error):
                 print("Error fetching record: \(error.localizedDescription)")
             }
         }
 
-        operation.queryResultBlock = { result in
+        operation.recordZoneFetchResultBlock = { zoneID, result in
+            // Zone fetch completed
+        }
+
+        operation.fetchRecordZoneChangesResultBlock = { result in
             DispatchQueue.main.async {
                 switch result {
                 case .success:
+                    print("[CloudKit] Fetched \(memories.count) memories")
                     call.resolve(["memories": memories])
                 case .failure(let error):
-                    call.reject("Failed to fetch memories: \(error.localizedDescription)")
+                    print("CloudKit fetch error (returning empty): \(error.localizedDescription)")
+                    call.resolve(["memories": []])
                 }
             }
         }

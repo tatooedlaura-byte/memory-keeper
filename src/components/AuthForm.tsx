@@ -2,14 +2,16 @@ import { useState } from 'react';
 import './AuthForm.css';
 
 interface AuthFormProps {
-  onSignIn: () => Promise<void>;
+  onSignInWithApple: () => Promise<void>;
+  onSignInWithGoogle: () => Promise<void>;
   onSignInWithEmail?: (email: string, password: string) => Promise<void>;
   onRegister?: (email: string, password: string) => Promise<void>;
   error: string | null;
 }
 
 export function AuthForm({
-  onSignIn,
+  onSignInWithApple,
+  onSignInWithGoogle,
   onSignInWithEmail,
   onRegister,
   error,
@@ -22,11 +24,23 @@ export function AuthForm({
   const [localError, setLocalError] = useState<string | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleOAuthSignIn = async () => {
+  const handleAppleSignIn = async () => {
     setLocalError(null);
     setIsSubmitting(true);
     try {
-      await onSignIn();
+      await onSignInWithApple();
+    } catch {
+      // Error handled by parent
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    setLocalError(null);
+    setIsSubmitting(true);
+    try {
+      await onSignInWithGoogle();
     } catch {
       // Error handled by parent
     } finally {
@@ -79,15 +93,24 @@ export function AuthForm({
           <div className="auth-oauth">
             <button
               className="oauth-button apple"
-              onClick={handleOAuthSignIn}
+              onClick={handleAppleSignIn}
               disabled={isSubmitting}
             >
-              <span className="oauth-icon">Apple</span>
+              <span className="oauth-icon"></span>
               <span>Sign in with Apple</span>
             </button>
 
+            <button
+              className="oauth-button google"
+              onClick={handleGoogleSignIn}
+              disabled={isSubmitting}
+            >
+              <span className="oauth-icon">G</span>
+              <span>Sign in with Google</span>
+            </button>
+
             <p className="auth-storage-note">
-              Your memories will be stored securely in iCloud
+              Apple uses iCloud, Google uses Google Drive
             </p>
 
             {(onSignInWithEmail || onRegister) && (
@@ -185,7 +208,7 @@ export function AuthForm({
                 className="back-button"
                 onClick={() => setShowEmailForm(false)}
               >
-                Back to Apple Sign In
+                Back to Sign In Options
               </button>
             </form>
           </>

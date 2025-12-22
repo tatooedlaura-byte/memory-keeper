@@ -4,7 +4,7 @@ import type { Memory, MediaAttachment, MemoryInput } from '../../types/Memory';
 export type { Memory, MediaAttachment, MemoryInput };
 
 // Auth provider types
-export type AuthProviderType = 'apple';
+export type AuthProviderType = 'apple' | 'google';
 
 // User identity abstraction (works across all auth providers)
 export interface AuthUser {
@@ -16,7 +16,7 @@ export interface AuthUser {
 }
 
 // Storage provider types
-export type StorageProviderType = 'cloudkit';
+export type StorageProviderType = 'cloudkit' | 'googledrive';
 
 // Sync status for a memory
 export type SyncStatus = 'synced' | 'pending' | 'conflict' | 'error';

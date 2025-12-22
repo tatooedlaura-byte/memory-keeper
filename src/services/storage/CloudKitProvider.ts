@@ -92,22 +92,26 @@ export class CloudKitProvider implements StorageProvider {
   // MARK: - Memory CRUD
 
   async createMemory(input: MemoryInput): Promise<Memory> {
+    console.log('[CloudKit] createMemory called');
     this.ensureInitialized();
 
     try {
       // Upload media files first
       const mediaAttachments: MediaAttachment[] = [];
       for (const file of input.mediaFiles) {
+        console.log('[CloudKit] Uploading media:', file.name);
         const attachment = await this.uploadMedia(file);
         mediaAttachments.push(attachment);
       }
 
       // Save memory record
+      console.log('[CloudKit] Saving memory to CloudKit...');
       const record = await CloudKitNative.saveMemory({
         text: input.text,
         tags: input.tags,
         media: JSON.stringify(mediaAttachments),
       });
+      console.log('[CloudKit] Memory saved, record:', record);
 
       const memory = this.recordToMemory(record);
       this.memories = [memory, ...this.memories];
@@ -115,6 +119,7 @@ export class CloudKitProvider implements StorageProvider {
 
       return memory;
     } catch (error) {
+      console.error('[CloudKit] createMemory failed:', error);
       throw new StorageError(
         'Failed to create memory',
         'unknown',

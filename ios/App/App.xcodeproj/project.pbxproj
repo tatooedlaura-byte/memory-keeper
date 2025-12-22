@@ -19,6 +19,8 @@
 		CK001A2B2EF7A00100000001 /* CloudKitPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = CK001A2B2EF7A00100000002 /* CloudKitPlugin.swift */; };
 		CK001A2B2EF7A00100000003 /* CloudKitPlugin.m in Sources */ = {isa = PBXBuildFile; fileRef = CK001A2B2EF7A00100000004 /* CloudKitPlugin.m */; };
 		CK001A2B2EF7A00100000005 /* MyViewController.swift in Sources */ = {isa = PBXBuildFile; fileRef = CK001A2B2EF7A00100000006 /* MyViewController.swift */; };
+		GA001A2B2EF7A00100000001 /* GoogleAuthPlugin.swift in Sources */ = {isa = PBXBuildFile; fileRef = GA001A2B2EF7A00100000002 /* GoogleAuthPlugin.swift */; };
+		GA001A2B2EF7A00100000003 /* GoogleAuthPlugin.m in Sources */ = {isa = PBXBuildFile; fileRef = GA001A2B2EF7A00100000004 /* GoogleAuthPlugin.m */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -37,6 +39,8 @@
 		CK001A2B2EF7A00100000002 /* CloudKitPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = CloudKitPlugin.swift; sourceTree = "<group>"; };
 		CK001A2B2EF7A00100000004 /* CloudKitPlugin.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = CloudKitPlugin.m; sourceTree = "<group>"; };
 		CK001A2B2EF7A00100000006 /* MyViewController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MyViewController.swift; sourceTree = "<group>"; };
+		GA001A2B2EF7A00100000002 /* GoogleAuthPlugin.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoogleAuthPlugin.swift; sourceTree = "<group>"; };
+		GA001A2B2EF7A00100000004 /* GoogleAuthPlugin.m */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.objc; path = GoogleAuthPlugin.m; sourceTree = "<group>"; };
 		F232BA98BD8AE609DC441DE6 /* Pods-App.release.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-App.release.xcconfig"; path = "Target Support Files/Pods-App/Pods-App.release.xcconfig"; sourceTree = "<group>"; };
 		F5C94B25800A0CBFD336858E /* Pods-App.debug.xcconfig */ = {isa = PBXFileReference; includeInIndex = 1; lastKnownFileType = text.xcconfig; name = "Pods-App.debug.xcconfig"; path = "Target Support Files/Pods-App/Pods-App.debug.xcconfig"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
@@ -82,6 +86,8 @@
 				CK001A2B2EF7A00100000002 /* CloudKitPlugin.swift */,
 				CK001A2B2EF7A00100000004 /* CloudKitPlugin.m */,
 				CK001A2B2EF7A00100000006 /* MyViewController.swift */,
+				GA001A2B2EF7A00100000002 /* GoogleAuthPlugin.swift */,
+				GA001A2B2EF7A00100000004 /* GoogleAuthPlugin.m */,
 				504EC30B1FED79650016851F /* Main.storyboard */,
 				504EC30E1FED79650016851F /* Assets.xcassets */,
 				504EC3101FED79650016851F /* LaunchScreen.storyboard */,
@@ -252,6 +258,8 @@
 				CK001A2B2EF7A00100000001 /* CloudKitPlugin.swift in Sources */,
 				CK001A2B2EF7A00100000003 /* CloudKitPlugin.m in Sources */,
 				CK001A2B2EF7A00100000005 /* MyViewController.swift in Sources */,
+				GA001A2B2EF7A00100000001 /* GoogleAuthPlugin.swift in Sources */,
+				GA001A2B2EF7A00100000003 /* GoogleAuthPlugin.m in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

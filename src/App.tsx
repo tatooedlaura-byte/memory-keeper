@@ -14,9 +14,9 @@ function App() {
     user,
     loading: authLoading,
     error: authError,
-    signIn,
-    signInWithEmail,
-    createAccount,
+    providerType,
+    signInWithApple,
+    signInWithGoogle,
     signOut,
   } = useAuth();
 
@@ -28,7 +28,7 @@ function App() {
     deleteMemory,
     removeMedia,
     searchMemories,
-  } = useMemories(user?.id);
+  } = useMemories(user?.id, providerType);
 
   const [filteredMemories, setFilteredMemories] = useState<Memory[]>([]);
   const [isSearching, setIsSearching] = useState(false);
@@ -60,9 +60,8 @@ function App() {
   if (!user) {
     return (
       <AuthForm
-        onSignIn={signIn}
-        onSignInWithEmail={signInWithEmail}
-        onRegister={createAccount}
+        onSignInWithApple={signInWithApple}
+        onSignInWithGoogle={signInWithGoogle}
         error={authError}
       />
     );

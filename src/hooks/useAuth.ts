@@ -1,152 +1,143 @@
-import { useState, useEffect, useCallback, useMemo } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { Preferences } from '@capacitor/preferences';
 import { usePlatform } from './usePlatform';
 import { createAuthProvider, type AuthProvider } from '../services/auth';
 import type { AuthUser, AuthProviderType } from '../services/platform/types';
 
-interface UseAuthOptions {
-  /**
-   * Override the default auth provider.
-   * If not specified, uses the recommended provider for the platform.
-   */
-  providerType?: AuthProviderType;
-}
+const AUTH_PROVIDER_KEY = 'auth_provider_type';
 
 interface UseAuthReturn {
   user: AuthUser | null;
   loading: boolean;
   error: string | null;
-  provider: AuthProvider;
-  providerType: AuthProviderType;
+  providerType: AuthProviderType | null;
   isAuthenticated: boolean;
   isApplePlatform: boolean;
 
   // Auth methods
-  signIn: () => Promise<void>;
+  signInWithApple: () => Promise<void>;
+  signInWithGoogle: () => Promise<void>;
   signInWithEmail?: (email: string, password: string) => Promise<void>;
   createAccount?: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
-
-  // Legacy aliases for compatibility
-  login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string) => Promise<void>;
-  logout: () => Promise<void>;
 }
 
-export function useAuth(options?: UseAuthOptions): UseAuthReturn {
+export function useAuth(): UseAuthReturn {
   const platform = usePlatform();
   const [user, setUser] = useState<AuthUser | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [providerType, setProviderType] = useState<AuthProviderType | null>(null);
 
-  // Determine which provider to use
-  const providerType: AuthProviderType = useMemo(() => {
-    if (options?.providerType) {
-      return options.providerType;
-    }
-    // Use Apple provider
-    return 'apple';
-  }, [options?.providerType]);
+  const providerRef = useRef<AuthProvider | null>(null);
+  const unsubscribeRef = useRef<(() => void) | null>(null);
 
-  // Create the auth provider
-  const provider = useMemo(() => {
-    return createAuthProvider(providerType);
-  }, [providerType]);
-
-  // Subscribe to auth state changes
+  // Restore saved provider on mount
   useEffect(() => {
-    setLoading(true);
+    async function restoreProvider() {
+      try {
+        const saved = await Preferences.get({ key: AUTH_PROVIDER_KEY });
+        if (saved.value) {
+          const type = saved.value as AuthProviderType;
+          const provider = createAuthProvider(type);
+          providerRef.current = provider;
+          setProviderType(type);
 
-    const unsubscribe = provider.onAuthStateChanged((authUser) => {
+          // Subscribe to auth state
+          unsubscribeRef.current = provider.onAuthStateChanged((authUser) => {
+            setUser(authUser);
+            setLoading(false);
+          });
+        } else {
+          setLoading(false);
+        }
+      } catch (err) {
+        console.error('Failed to restore auth provider:', err);
+        setLoading(false);
+      }
+    }
+
+    restoreProvider();
+
+    return () => {
+      if (unsubscribeRef.current) {
+        unsubscribeRef.current();
+      }
+    };
+  }, []);
+
+  const switchToProvider = useCallback(async (type: AuthProviderType) => {
+    // Clean up previous provider
+    if (unsubscribeRef.current) {
+      unsubscribeRef.current();
+      unsubscribeRef.current = null;
+    }
+
+    const provider = createAuthProvider(type);
+    providerRef.current = provider;
+    setProviderType(type);
+
+    // Subscribe to new provider
+    unsubscribeRef.current = provider.onAuthStateChanged((authUser) => {
       setUser(authUser);
-      setLoading(false);
     });
 
-    return () => unsubscribe();
-  }, [provider]);
+    // Save provider choice
+    await Preferences.set({ key: AUTH_PROVIDER_KEY, value: type });
 
-  // Sign in using the provider's OAuth flow (Apple)
-  const signIn = useCallback(async () => {
+    return provider;
+  }, []);
+
+  const signInWithApple = useCallback(async () => {
     setError(null);
     try {
+      const provider = await switchToProvider('apple');
       await provider.signIn();
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Sign in failed';
       setError(message);
       throw err;
     }
-  }, [provider]);
+  }, [switchToProvider]);
 
-  // Sign in with email/password (only for Firebase provider)
-  const signInWithEmail = useCallback(
-    async (email: string, password: string) => {
-      if (!provider.signInWithEmail) {
-        throw new Error('Email sign-in not supported by this provider');
-      }
-      setError(null);
-      try {
-        await provider.signInWithEmail(email, password);
-      } catch (err: unknown) {
-        const message = err instanceof Error ? err.message : 'Sign in failed';
-        setError(message);
-        throw err;
-      }
-    },
-    [provider]
-  );
+  const signInWithGoogle = useCallback(async () => {
+    setError(null);
+    try {
+      const provider = await switchToProvider('google');
+      await provider.signIn();
+    } catch (err: unknown) {
+      const message = err instanceof Error ? err.message : 'Sign in failed';
+      setError(message);
+      throw err;
+    }
+  }, [switchToProvider]);
 
-  // Create account with email/password (only for Firebase provider)
-  const createAccount = useCallback(
-    async (email: string, password: string) => {
-      if (!provider.createAccount) {
-        throw new Error('Account creation not supported by this provider');
-      }
-      setError(null);
-      try {
-        await provider.createAccount(email, password);
-      } catch (err: unknown) {
-        const message = err instanceof Error ? err.message : 'Account creation failed';
-        setError(message);
-        throw err;
-      }
-    },
-    [provider]
-  );
-
-  // Sign out
   const signOut = useCallback(async () => {
     setError(null);
     try {
-      await provider.signOut();
+      if (providerRef.current) {
+        await providerRef.current.signOut();
+      }
       setUser(null);
+      setProviderType(null);
+      await Preferences.remove({ key: AUTH_PROVIDER_KEY });
     } catch (err: unknown) {
       const message = err instanceof Error ? err.message : 'Sign out failed';
       setError(message);
       throw err;
     }
-  }, [provider]);
-
-  // Legacy aliases for compatibility with existing code
-  const login = signInWithEmail;
-  const register = createAccount;
-  const logout = signOut;
+  }, []);
 
   return {
     user,
     loading,
     error,
-    provider,
     providerType,
     isAuthenticated: !!user,
     isApplePlatform: platform.isApplePlatform,
 
-    signIn,
-    signInWithEmail: provider.supportsEmailPassword ? signInWithEmail : undefined,
-    createAccount: provider.supportsEmailPassword ? createAccount : undefined,
+    signInWithApple,
+    signInWithGoogle,
     signOut,
-
-    // Legacy aliases
-    login,
-    register,
-    logout,
   };
 }
