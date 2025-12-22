@@ -1,4 +1,7 @@
 import { useState, useCallback } from 'react';
+import { Capacitor } from '@capacitor/core';
+import { Filesystem, Directory, Encoding } from '@capacitor/filesystem';
+import { Share } from '@capacitor/share';
 import { useAuth } from './hooks/useAuth';
 import { useMemories } from './hooks/useMemories';
 import { LandingPage } from './components/LandingPage';
@@ -48,6 +51,66 @@ function App() {
     [searchMemories]
   );
 
+  const handleExport = useCallback(async () => {
+    if (memories.length === 0) {
+      alert('No memories to export');
+      return;
+    }
+
+    const exportData = {
+      exportedAt: new Date().toISOString(),
+      totalMemories: memories.length,
+      memories: memories.map((m) => ({
+        id: m.id,
+        text: m.text,
+        tags: m.tags,
+        media: m.media,
+        createdAt: m.createdAt,
+        updatedAt: m.updatedAt,
+      })),
+    };
+
+    const jsonString = JSON.stringify(exportData, null, 2);
+    const fileName = `memory-keeper-backup-${new Date().toISOString().split('T')[0]}.json`;
+
+    if (Capacitor.isNativePlatform()) {
+      try {
+        console.log('[Export] Writing file...');
+        // Write file to cache directory
+        const result = await Filesystem.writeFile({
+          path: fileName,
+          data: jsonString,
+          directory: Directory.Cache,
+          encoding: Encoding.UTF8,
+        });
+        console.log('[Export] File written to:', result.uri);
+
+        // Share the file
+        console.log('[Export] Opening share sheet...');
+        await Share.share({
+          title: 'Memory Keeper Backup',
+          url: result.uri,
+          dialogTitle: 'Save your backup',
+        });
+        console.log('[Export] Share complete');
+      } catch (error: any) {
+        console.error('[Export] Error:', error?.message || error);
+        alert(`Export failed: ${error?.message || 'Unknown error'}`);
+      }
+    } else {
+      // Web fallback
+      const blob = new Blob([jsonString], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = fileName;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+    }
+  }, [memories]);
+
   const displayMemories = isSearching ? filteredMemories : memories;
 
   if (authLoading) {
@@ -77,7 +140,7 @@ function App() {
   return (
     <div className="app">
       <div className="app-container">
-        <Header onLogout={signOut} userEmail={user.email} />
+        <Header onLogout={signOut} onExport={handleExport} userEmail={user.email} />
 
         <SearchBar
           onSearch={handleSearch}
