@@ -8,6 +8,7 @@ interface AuthFormProps {
   onRegister?: (email: string, password: string) => Promise<void>;
   error: string | null;
   onBack?: () => void;
+  showAppleSignIn?: boolean;
 }
 
 export function AuthForm({
@@ -17,6 +18,7 @@ export function AuthForm({
   onRegister,
   error,
   onBack,
+  showAppleSignIn = true,
 }: AuthFormProps) {
   const [showEmailForm, setShowEmailForm] = useState(false);
   const [isLogin, setIsLogin] = useState(true);
@@ -93,14 +95,16 @@ export function AuthForm({
 
         {!showEmailForm ? (
           <div className="auth-oauth">
-            <button
-              className="oauth-button apple"
-              onClick={handleAppleSignIn}
-              disabled={isSubmitting}
-            >
-              <span className="oauth-icon"></span>
-              <span>Sign in with Apple</span>
-            </button>
+            {showAppleSignIn && (
+              <button
+                className="oauth-button apple"
+                onClick={handleAppleSignIn}
+                disabled={isSubmitting}
+              >
+                <span className="oauth-icon"></span>
+                <span>Sign in with Apple</span>
+              </button>
+            )}
 
             <button
               className="oauth-button google"
@@ -112,7 +116,7 @@ export function AuthForm({
             </button>
 
             <p className="auth-storage-note">
-              Apple uses iCloud, Google uses Google Drive
+              {showAppleSignIn ? 'Apple uses iCloud, Google uses Google Drive' : 'Your memories are stored in Google Drive'}
             </p>
 
             {(onSignInWithEmail || onRegister) && (

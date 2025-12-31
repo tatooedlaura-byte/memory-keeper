@@ -133,6 +133,7 @@ function App() {
         onSignInWithGoogle={signInWithGoogle}
         error={authError}
         onBack={() => setShowLanding(true)}
+        showAppleSignIn={Capacitor.isNativePlatform()}
       />
     );
   }
