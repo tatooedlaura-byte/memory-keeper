@@ -41,6 +41,8 @@ export default defineConfig({
         ]
       },
       workbox: {
+        // Version bump forces PWA cache update
+        cacheId: 'memory-keeper-v2',
         globPatterns: ['**/*.{js,css,html,ico,png,svg,woff,woff2}'],
         runtimeCaching: [
           {
